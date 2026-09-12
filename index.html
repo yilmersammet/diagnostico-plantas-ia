@@ -16,6 +16,13 @@
         /* Contenedor Principal */
         .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 
+        /* Tarjeta de Integrantes */
+        .team-card { background: #e8f5e9; border: 2px solid #52b788; border-radius: 12px; padding: 20px; margin-bottom: 25px; text-align: center; }
+        .team-card h3 { color: #1b4332; font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .team-card .course { color: #2d6a4f; font-weight: bold; margin-bottom: 12px; font-size: 1.05rem; }
+        .team-members { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+        .member-badge { background: #ffffff; color: #1b4332; font-weight: 600; padding: 6px 14px; border-radius: 20px; border: 1px solid #b7e4c7; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+
         /* Secciones Teóricas */
         .section-card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .section-card h2 { color: #2d6a4f; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; font-size: 1.4rem; }
@@ -39,11 +46,25 @@
 
     <header>
         <h1>🌱 La IA en la Ciencia y la Agricultura</h1>
-        <p>Proyecto Escolar: Diagnóstico Temprano de Enfermedades en Plantas mediante Visión por Computadora</p>
+        <p>Diagnóstico Temprano de Enfermedades en Plantas mediante Visión por Computadora</p>
     </header>
 
     <div class="container">
         
+        <!-- Ficha del Grupo -->
+        <div class="team-card">
+            <h3>Proyecto de Ciencias y Tecnología</h3>
+            <p class="course">Curso 903</p>
+            <p style="font-weight: 600; color: #2d6a4f; margin-bottom: 8px;">Integrantes:</p>
+            <div class="team-members">
+                <span class="member-badge">Sammara Isabela Gómez Morales</span>
+                <span class="member-badge">Solangel Rolog</span>
+                <span class="member-badge">Ana Castellanos</span>
+                <span class="member-badge">Laura Ramírez</span>
+                <span class="member-badge">Esmeralda Ruiz</span>
+            </div>
+        </div>
+
         <!-- Sección 1: Introducción Teórica -->
         <div class="section-card">
             <h2>🔬 ¿Cómo influye la Inteligencia Artificial en la Ciencia?</h2>
@@ -83,7 +104,7 @@
     </div>
 
     <footer>
-        <p>Proyecto sobre IA y Ciencia • Creado con TensorFlow.js y Teachable Machine</p>
+        <p>Proyecto de Ciencias y Tecnología • Curso 903 • Creado con TensorFlow.js y Teachable Machine</p>
     </footer>
 
     <!-- Scripts de TensorFlow.js -->
