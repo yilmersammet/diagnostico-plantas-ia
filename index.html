@@ -33,11 +33,20 @@
         /* Sección de la IA */
         .ia-card { background: white; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.08); border: 2px solid #52b788; }
         .ia-card h2 { color: #1b4332; margin-bottom: 10px; }
-        .btn-start { background-color: #2d6a4f; color: white; border: none; padding: 14px 28px; font-size: 1rem; font-weight: bold; border-radius: 30px; cursor: pointer; transition: 0.3s; margin: 15px 0; }
-        .btn-start:hover { background-color: #1b4332; transform: scale(1.02); }
         
-        #webcam-container { margin: 20px auto; border: 4px solid #2d6a4f; border-radius: 12px; width: 220px; height: 220px; overflow: hidden; background: #111; display: flex; justify-content: center; align-items: center; }
-        #label-container { margin-top: 15px; font-size: 1.1rem; font-weight: 600; color: #1b4332; }
+        .controls-panel { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; }
+        
+        .btn { background-color: #2d6a4f; color: white; border: none; padding: 12px 22px; font-size: 0.95rem; font-weight: bold; border-radius: 30px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background-color: #1b4332; transform: scale(1.02); }
+        .btn-secondary { background-color: #40916c; }
+        .btn-capture { background-color: #d90429; }
+        .btn-capture:hover { background-color: #a0001c; }
+        
+        #webcam-container { margin: 20px auto; border: 4px solid #2d6a4f; border-radius: 12px; width: 250px; height: 250px; overflow: hidden; background: #111; display: flex; justify-content: center; align-items: center; }
+        
+        .result-box { background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 15px; text-align: center; }
+        .result-title { font-size: 1.2rem; font-weight: bold; color: #1b4332; margin-bottom: 10px; }
+        .result-main { font-size: 1.3rem; font-weight: bold; color: #2d6a4f; background: #ffffff; padding: 12px; border-radius: 8px; border: 2px solid #52b788; margin-top: 10px; }
 
         footer { text-align: center; padding: 20px; color: #718096; font-size: 0.9rem; margin-top: 40px; }
     </style>
@@ -57,8 +66,8 @@
             <p class="course">Curso 903</p>
             <p style="font-weight: 600; color: #2d6a4f; margin-bottom: 8px;">Integrantes:</p>
             <div class="team-members">
-                <span class="member-badge">Sammara Gómez </span>
-                <span class="member-badge">Solangel Rolong</span>
+                <span class="member-badge">Sammara Isabela Gómez Morales</span>
+                <span class="member-badge">Solangel Rolog</span>
                 <span class="member-badge">Ana Castellanos</span>
                 <span class="member-badge">Laura Ramírez</span>
                 <span class="member-badge">Esmeralda Ruiz</span>
@@ -89,15 +98,19 @@
         <!-- Sección 2: Herramienta Interactiva -->
         <div class="ia-card">
             <h2>📷 Probador en Tiempo Real</h2>
-            <p>Haz clic en el botón, permite el acceso a la cámara y muestra una hoja frente a la pantalla para obtener el diagnóstico.</p>
+            <p>Activa la cámara, enfoca la hoja de la planta y presiona <strong>"Tomar Foto y Diagnosticar"</strong> para fijar el resultado.</p>
             
-            <button class="btn-start" type="button" onclick="init()">Activar Cámara e Iniciar Escaneo</button>
+            <div class="controls-panel">
+                <button class="btn" id="btn-init" type="button" onclick="init()">Activar Cámara</button>
+                <button class="btn btn-secondary" id="btn-switch" type="button" onclick="switchCamera()" style="display:none;">🔄 Cambiar Cámara (Trasera/Delantera)</button>
+                <button class="btn btn-capture" id="btn-capture" type="button" onclick="captureAndDiagnose()" style="display:none;">📸 Tomar Foto y Diagnosticar</button>
+            </div>
             
             <div id="webcam-container"></div>
             
-            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                <strong>Resultado del Análisis:</strong>
-                <div id="label-container">Esperando activación de cámara...</div>
+            <div class="result-box">
+                <div class="result-title">Estado del Diagnóstico:</div>
+                <div id="label-container">Presiona "Activar Cámara" para comenzar.</div>
             </div>
         </div>
 
@@ -112,46 +125,114 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script type="text/javascript">
-        // TU ENLACE DE TEACHABLE MACHINE CONECTADO
         const URL = "https://teachablemachine.withgoogle.com/models/fB3mIdbeF/";
 
         let model, webcam, labelContainer, maxPredictions;
+        let isFacingUser = false; // Iniciar apuntando hacia afuera en celulares
+        let isLive = false;
+        let animId = null;
 
         async function init() {
+            document.getElementById("label-container").innerHTML = "Cargando modelo de IA...";
             const modelURL = URL + "model.json";
             const metadataURL = URL + "metadata.json";
 
-            labelContainer = document.getElementById("label-container");
-            labelContainer.innerHTML = "Cargando modelo de IA...";
+            if (!model) {
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+            }
 
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
+            await setupWebcam();
+            
+            document.getElementById("btn-init").style.display = "none";
+            document.getElementById("btn-switch").style.display = "inline-block";
+            document.getElementById("btn-capture").style.display = "inline-block";
+            document.getElementById("label-container").innerHTML = "Cámara lista. Enfoca la hoja y presiona <b>'Tomar Foto y Diagnosticar'</b>.";
+        }
 
-            const flip = true; 
-            webcam = new tmImage.Webcam(220, 220, flip); 
-            await webcam.setup(); 
+        async function setupWebcam() {
+            if (webcam) {
+                webcam.stop();
+            }
+
+            const flip = isFacingUser; 
+            webcam = new tmImage.Webcam(250, 250, flip);
+            
+            // Configurar restricciones para seleccionar cámara trasera o delantera en celulares
+            const facingMode = isFacingUser ? "user" : "environment";
+            await webcam.setup({ facingMode: facingMode }); 
             await webcam.play();
-            window.requestAnimationFrame(loop);
-
+            
+            isLive = true;
             document.getElementById("webcam-container").innerHTML = "";
             document.getElementById("webcam-container").appendChild(webcam.canvas);
-        }
-
-        async function loop() {
-            webcam.update();
-            await predict();
-            window.requestAnimationFrame(loop);
-        }
-
-        async function predict() {
-            const prediction = await model.predict(webcam.canvas);
-            labelContainer.innerHTML = "";
             
-            for (let i = 0; i < maxPredictions; i++) {
-                const percentage = (prediction[i].probability * 100).toFixed(1);
-                const classPrediction = `<div><strong>${prediction[i].className}:</strong> ${percentage}%</div>`;
-                labelContainer.innerHTML += classPrediction;
+            if (animId) cancelAnimationFrame(animId);
+            loop();
+        }
+
+        async function switchCamera() {
+            isFacingUser = !isFacingUser;
+            document.getElementById("label-container").innerHTML = "Cambiando de cámara...";
+            await setupWebcam();
+            document.getElementById("btn-capture").style.display = "inline-block";
+            document.getElementById("label-container").innerHTML = "Cámara cambiada. Lista para tomar la foto.";
+        }
+
+        function loop() {
+            if (isLive) {
+                webcam.update();
+                animId = window.requestAnimationFrame(loop);
             }
+        }
+
+        async function captureAndDiagnose() {
+            isLive = false; // Detener la actualización continua en tiempo real
+            webcam.pause(); // Congelar la imagen de la cámara
+
+            document.getElementById("label-container").innerHTML = "Analizando imagen...";
+
+            const prediction = await model.predict(webcam.canvas);
+            
+            let highestProb = 0;
+            let bestClass = "";
+            let detailsHtml = "";
+
+            for (let i = 0; i < maxPredictions; i++) {
+                const prob = prediction[i].probability;
+                const percentage = (prob * 100).toFixed(1);
+                
+                if (prob > highestProb) {
+                    highestProb = prob;
+                    bestClass = prediction[i].className;
+                }
+
+                detailsHtml += `<div style="font-size:0.95rem; color:#4a5568; margin-top:4px;">${prediction[i].className}: <b>${percentage}%</b></div>`;
+            }
+
+            const topPercentage = (highestProb * 100).toFixed(1);
+
+            document.getElementById("label-container").innerHTML = `
+                <div class="result-main">
+                    🏆 Diagnóstico Principal: <br>
+                    <span style="color:#1b4332; font-size:1.4rem;">${bestClass} (${topPercentage}%)</span>
+                </div>
+                <div style="margin-top:15px; border-top: 1px solid #cbd5e0; padding-top:10px;">
+                    <b>Desglose Completo:</b>
+                    ${detailsHtml}
+                </div>
+                <button class="btn" style="margin-top:15px; background-color:#40916c;" onclick="resumeScanning()">📷 Tomar Otra Foto</button>
+            `;
+            
+            document.getElementById("btn-capture").style.display = "none";
+        }
+
+        async function resumeScanning() {
+            isLive = true;
+            webcam.play();
+            loop();
+            document.getElementById("btn-capture").style.display = "inline-block";
+            document.getElementById("label-container").innerHTML = "Enfoca la hoja y presiona <b>'Tomar Foto y Diagnosticar'</b>.";
         }
     </script>
 </body>
